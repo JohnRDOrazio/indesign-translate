@@ -14,7 +14,7 @@ and you will have a translated copy of the source file.
 
 ## What is the workflow for translating the Indesign files?
 
-1. The graphic designer creates the original Indesign file, keeping in mind to avoid adding full line breaks in the middle of sentences (soft breaks with <kbd>Shift</kbd> +  <kbd>Enter</kbd> are acceptable, this will insert a 'Line separator' character).
+1. The graphic designer creates the original Indesign file, keeping in mind to avoid adding full line breaks in the middle of sentences (soft breaks with <kbd>Shift</kbd> +  <kbd>Enter</kbd> are acceptable, this will insert a 'Line separator' character, but should be used sparingly, only when an actual newline is required).
 2. A folder for the project should be created inside the `input` folder (go ahead and create the `input` folder if it doesn't exist yet). If for example the project is called **'Catalogo2022'**, place the Indesign source `IDML` file in `indesign-translate/input/Catalogo2022/Catalogo2022.idml`. The `IDML` file can have any name, for example it could have the name of the source language (`it.idml`, or `en.idml` etc.).
 3. A script is run to extract the Source text from the `idml` file for translation: `npm run extract`. This script will create a `translation.json` file in the `translate_json` folder (will be automatically created if it doesn't exist), under a subfolder with the same name as the project. For example, `indesign-translate/translate_json/Catalogo2022/it/translation.json`.
 4. A Github repository should be created for the extracted source (in the example, a repository should be initialized in `indesign-translate/translate_json/Catalogo2022`), and a Weblate project for that repository should be created.
