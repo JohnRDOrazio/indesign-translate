@@ -12,7 +12,7 @@ and you will have a translated copy of the source file.
 2. Use git to checkout this repo
 3. Run `npm install` from the command line once inside the repo folder
 
-## What is the workflow for updating or translating the tip sheets?
+## What is the workflow for translating the Indesign files?
 
 1. The graphic designer creates the original Indesign file, keeping in mind to avoid adding full line breaks in the middle of sentences (soft breaks with <kbd>Shift</kbd> +  <kbd>Enter</kbd> are acceptable, this will insert a 'Line separator' character).
 2. A folder for the project should be created inside the `input` folder (go ahead and create the `input` folder if it doesn't exist yet). If for example the project is called **'Catalogo2022'**, place the Indesign source `IDML` file in `indesign-translate/input/Catalogo2022/Catalogo2022.idml`. The `IDML` file can have any name, for example it could have the name of the source language (`it.idml`, or `en.idml` etc.).
