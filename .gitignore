@@ -1,4 +1,5 @@
 node_modules
-input
-output
+input/*
+output/*
 temp
+translate_json/*

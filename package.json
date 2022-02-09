@@ -1,10 +1,10 @@
 {
-  "name": "tip-sheet-translate",
-  "version": "1.0.0",
+  "name": "indesign-translate",
+  "version": "1.1.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "extract": "ts-node extract_english_json.ts",
+    "extract": "ts-node extract_source_json.ts",
     "translate": "ts-node translate_indesign.ts",
     "sheet-to-json": "ts-node sheet_to_json.ts"
   },
@@ -30,5 +30,8 @@
     "xlsx": "^0.16.6"
   },
   "author": "Michael Clapham",
+  "contributors": [
+    {"name":"John D'Orazio","url":"https://github.com/JohnRDOrazio","email":"priest@johnromanodorazio.com"}
+  ],
   "license": "MIT"
 }

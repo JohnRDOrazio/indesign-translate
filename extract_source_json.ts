@@ -57,8 +57,8 @@ function extractSourceJSON(idmlName: string) {
         console.log("Created non existent path " + translateJSONPath + "...");
     }
 
-    if (!fs.existsSync(path.join(translateJSONPath, "it"))) {
-        fs.mkdirSync(path.join(translateJSONPath, "it"));
+    if (!fs.existsSync(path.join(translateJSONPath, sourceLang))) {
+        fs.mkdirSync(path.join(translateJSONPath, sourceLang));
         console.log("Created non existent path " + path.join(translateJSONPath, sourceLang) + "...");
     }
 
@@ -122,8 +122,6 @@ function extractSourceJSON(idmlName: string) {
                 });
             }
         });
-        //fs.writeFileSync(path.join(translateJSONPath, sourceLang, pageFileName), JSON.stringify(translateStructure, null, 4));
-        //console.log("Wrote file " + path.join(translateJSONPath, sourceLang, pageFileName));
     });
     fs.writeFileSync(path.join(translateJSONPath, sourceLang, "translation.json"), JSON.stringify(translationObj, null, 4)); 
     console.log("Wrote file " + path.join(translateJSONPath, sourceLang, "translation.json"));

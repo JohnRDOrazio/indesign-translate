@@ -2,17 +2,23 @@ import * as fs from "fs";
 import * as path from "path";
 import * as AdmZip from "adm-zip";
 import * as rmfr from "rmfr";
-import { removeForbiddenCharacters, removeSomeForbiddenCharacters, extractStoryMap, getStoriesForSpread, getSpreadIdsInOrder, pageFileNameForSpreadId, TranslationEntry, getIDMLFilePathForName, htmlEntryToTextEntries } from "./shared_functions";
+import { removeSomeForbiddenCharacters, extractStoryMap, getStoriesForSpread, getSpreadIdsInOrder, pageFileNameForSpreadId, TranslationEntry, getIDMLFilePathForName, htmlEntryToTextEntries } from "./shared_functions";
 import * as ncp from "ncp";
 
-let inputFolder         = "./input";
-let outputFolder        = "./output";
-let translateJSONPath   = "./translate_json";
-let tempFolder          = "./temp";
+const inputFolder         = "./input";
+const outputFolder        = "./output";
+const translateJSONPath   = "./translate_json";
+const tempFolder          = "./temp";
 
 async function ncpPromise(from: string, to: string): Promise<any> {
     return new Promise<void>((resolve, reject) => {
-        ncp(from, to, (err) => err ? reject(err) : resolve());
+        ncp(from, to, { filter: (source) => {
+            if( fs.statSync(source).isDirectory() ) {
+                return true;
+            } else {
+                return source.match(/\.idml$/) !== null;
+            }
+        } }, (err) => err ? reject(err) : resolve());
     });
 }
 
@@ -36,7 +42,7 @@ async function translateIDMLFiles() {
         }
 
     } catch (ex) {
-        console.error("Error removing directory", ex);
+        console.error("Error removing or copying directory:", ex);
     }
 }
 
@@ -45,7 +51,7 @@ translateIDMLFiles().then(() => {
 })
 
 function translateIDML(idmlName: string) {
-
+    let sourceLang: string = 'en';
     // Create temp path for extracted contents of this IDML file
     const tempPath = path.join(tempFolder, idmlName);
     if (!fs.existsSync(tempPath)) {
@@ -59,24 +65,26 @@ function translateIDML(idmlName: string) {
         fs.mkdirSync(outputSubPath);
         console.log("Created non existent output path " + outputSubPath);
     }
-    
+
     let inputFilePath = getIDMLFilePathForName(inputFolder, idmlName);
     if (inputFilePath === null) {
         console.warn("Could not find IDML file for ", idmlName);
         return;
+    } else {
+        sourceLang = inputFilePath.split(/.*[\/|\\]/)[1].split('.')[0];
+        console.log("Detected source lang: ", sourceLang);
     }
     let inputZip = new AdmZip(inputFilePath);
 
     let translateJSONSubPath = path.join(translateJSONPath, idmlName);
-    let destinationLangIds = ['en','es','de','fr','pt'];
-    let languageCodes = fs.readdirSync(translateJSONSubPath).filter((langCode) => destinationLangIds.includes(langCode) );
+    let languageCodes = fs.readdirSync(translateJSONSubPath).filter((langCode) => langCode !== sourceLang );
 
     for (let langCode of languageCodes) {
 
         const tempPathTranslated = path.join(tempPath, langCode);
         if (!fs.existsSync(tempPathTranslated)) {
             fs.mkdirSync(tempPathTranslated);
-            console.log("Created non existent output path " + tempPathTranslated);
+            console.log("Created non existent temp path " + tempPathTranslated);
         }
 
         // Extract contents of input InDesign into temporary folder
