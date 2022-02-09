@@ -1,8 +1,8 @@
-import * as fs from "fs"
-import * as path from "path"
-import * as AdmZip from "adm-zip"
-import * as rimraf from "rimraf"
-import { getStoriesForSpread, removeForbiddenCharacters, removeSomeForbiddenCharacters, getSpreadIdsInOrder, pageFileNameForSpreadId, TranslationEntry, getIDMLFilePathForName, extractStoryPSRList, psrListToHTML } from "./shared_functions"
+import fs from "fs"
+import path from "path"
+import AdmZip from "adm-zip"
+import rimraf from "rimraf"
+import { getStoriesForSpread, removeForbiddenCharacters, removeSomeForbiddenCharacters, getSpreadIdsInOrder, pageFileNameForSpreadId, getIDMLFilePathForName, extractStoryPSRList, psrListToHTML, PSRSummary } from "./shared_functions"
 
 let inputFolder: string = "./input";
 let translateJSONFolder: string = "./translate_json";
@@ -22,6 +22,7 @@ rimraf(tempFolder, (err) => {
         let inputSubPath = path.join(inputFolder, idmlName);
         if (fs.statSync(inputSubPath).isDirectory()) {
             extractSourceJSON(idmlName);
+            console.log("Done.");
         }
     });
 });
@@ -66,35 +67,24 @@ function extractSourceJSON(idmlName: string) {
 
     const spreadsPath = path.join(tempPathFull, "Spreads");
     const storiesPath = path.join(tempPathFull, "Stories");
-    // const storyIdsBySpreadFile: { [ spreadFile: string]: string[] } = {};
-    const translationObj = {};
-    let currentStoryId = '';
+    let translationObj: {[key: string]: {[key: string]: {[key: string]: string} } } = {};
+    let currentStoryId: string = '';
     fs.readdirSync(spreadsPath).forEach((spreadFile) => {
         console.log('Reading spread file ' + spreadFile + '...');
-        const spreadId = spreadFile.replace("Spread_", "").replace(".xml", "");
-        const spreadFilePath = path.join(spreadsPath, spreadFile)
-        const spreadFileContents = fs.readFileSync(spreadFilePath).toString();
-        const storyIds = getStoriesForSpread(spreadFileContents);
-        //let spreadTranslateMap = {};
-        const translateStructure: TranslationEntry[] = [];
-        const pageFileName = pageFileNameForSpreadId(spreadIdsInOrder, spreadId);
-        const pageFileNameShort = pageFileName.split('.')[0];
-        translationObj[pageFileNameShort] = {};
+        const spreadId: string              = spreadFile.replace("Spread_", "").replace(".xml", "");
+        const spreadFilePath: string        = path.join(spreadsPath, spreadFile)
+        const spreadFileContents: string    = fs.readFileSync(spreadFilePath).toString();
+        const storyIds: string[]            = getStoriesForSpread(spreadFileContents);
+        const pageFileName: string          = pageFileNameForSpreadId(spreadIdsInOrder, spreadId);
+        const pageFileNameShort: string     = pageFileName.split('.')[0];
+        translationObj[pageFileNameShort]   = {};
         storyIds.forEach((storyId) => {
-            let storyFile = `Story_${storyId}.xml`;
-            const storyFileContents = fs.readFileSync(path.join(storiesPath, storyFile)).toString();
-            const psrList = extractStoryPSRList(storyFileContents);
-            const hasLinks = psrList.filter((psr) => psr.type === "hyperlink").length > 0;
+            const storyFile: string         = `Story_${storyId}.xml`;
+            const storyFileContents: string = fs.readFileSync(path.join(storiesPath, storyFile)).toString();
+            const psrList: PSRSummary[]     = extractStoryPSRList(storyFileContents);
+            const hasLinks: boolean         = psrList.filter((psr) => psr.type === "hyperlink").length > 0;
             if (hasLinks) {
-                let html = psrListToHTML(psrList);
-                const entry: TranslationEntry = {
-                    sourceText: removeForbiddenCharacters(html),
-                    text: removeSomeForbiddenCharacters(html),
-                    note: "",
-                    type: "html",
-                    storyId: storyId
-                };
-                translateStructure.push(entry);
+                let html: string = psrListToHTML(psrList);
                 if( storyId !== currentStoryId ) {
                     currentStoryId = storyId;
                     translationObj[pageFileNameShort][currentStoryId] = {};
@@ -104,14 +94,6 @@ function extractSourceJSON(idmlName: string) {
                 }
             } else {
                 psrList.forEach((psr) => {
-                    const entry: TranslationEntry = {
-                        sourceText: removeForbiddenCharacters(psr.content),
-                        text: removeSomeForbiddenCharacters(psr.content),
-                        note: "",
-                        type: "text",
-                        storyId: storyId
-                    };
-                    translateStructure.push(entry);
                     if( storyId !== currentStoryId ) {
                         currentStoryId = storyId;
                         translationObj[pageFileNameShort][currentStoryId] = {};
