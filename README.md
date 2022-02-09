@@ -1,4 +1,4 @@
-# IDEMS InDesign Translate Utility
+# InDesign Translate Utility
 
 This script allows to export strings (stories) from InDesign files (currently only `IDML` format is supported) to `JSON`
 in an [i18next](https://www.i18next.com/) compatible format, so as to allow for translation of such strings / stories to other languages.
