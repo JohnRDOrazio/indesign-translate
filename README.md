@@ -1,54 +1,46 @@
 # IDEMS InDesign Translate Utility
 
-This repository is for translating the InDesign files used to generated the Covid 19 parenting tip sheet PDFs.
+This script allows to export strings (stories) from InDesign files (currently only `IDML` format is supported) to `JSON`
+in an [i18next](https://www.i18next.com/) compatible format, so as to allow for translation of such strings / stories to other languages.
 
-Google Drive folder with the InDesign files in [here](https://drive.google.com/open?id=1EFOOVZn9UK_esJ6lVCko9sy-uxrEkLmY)
+Once translated, the `JSON` file with the translated strings can be re-imported to a new `IDML` file that is copied from the original source file,
+and you will have a translated copy of the source file.
+
+## Requirements for running the scripts
+
+1. Download and install NodeJS. [Click here to download NodeJS](https://nodejs.org/en/download/).
+2. Use git to checkout this repo
+3. Run `npm install` from the command line once inside the repo folder
 
 ## What is the workflow for updating or translating the tip sheets?
 
-The workflow for enabling the translation of tip sheets works like so:
+1. The graphic designer creates the original Indesign file, keeping in mind to avoid adding full line breaks in the middle of sentences (soft breaks with <kbd>Shift</kbd> +  <kbd>Enter</kbd> are acceptable, this will insert a 'Line separator' character).
+2. A folder for the project should be created inside the `input` folder (go ahead and create the `input` folder if it doesn't exist yet). If for example the project is called **'Catalogo2022'**, place the Indesign source `IDML` file in `indesign-translate/input/Catalogo2022/Catalogo2022.idml`. The `IDML` file can have any name, for example it could have the name of the source language (`it.idml`, or `en.idml` etc.).
+3. A script is run to extract the Source text from the `idml` file for translation: `npm run extract`. This script will create a `translation.json` file in the `translate_json` folder (will be automatically created if it doesn't exist), under a subfolder with the same name as the project. For example, `indesign-translate/translate_json/Catalogo2022/it/translation.json`.
+4. A Github repository should be created for the extracted source (in the example, a repository should be initialized in `indesign-translate/translate_json/Catalogo2022`), and a Weblate project for that repository should be created.
+5. Translation can be done directly in the Weblate interface for the project, and Weblate will take care of sending translations back to the Github repository.
+6. Once translations are complete, and all translations have been commmitted back to the Github repository, and all Pull Requests have been resolved, the local repository should by synchronized with the remote Github repository using `git pull`.
+7. A script is then used to generate an InDesign file (in `IDML` foramt) for each language for which we have translations: `npm run translate`. This will generate an `IDML` file for each language in the `output` folder (will be created if it doesn't exist), under a subfolder with the same name as the project. For example, `indesign-translate/output/Catalogo2022/fr.idml`.
+8. These InDesign files must be opened in InDesign to check for any manual adjustments needed. Font sizes may need to be adjusted, text boxes may need to be resized, boxes may require rearranging (for example, in English adjectives precede nouns, whereas in other languages adjectives may sometimes follow a noun; if the adjective and the noun are in separate text boxes, the order of the text boxes may need some rearrangement).
+9. Once the translated file has been reviewed in InDesign it is ready to be exported as a PDF.
 
-1. The English version of the tip sheets are updated by designer in InDesign
-2. Scripts are run to extract the English text for translation (in case any text has changed).
-3. The extracted english is passed to translator partners who return files with the translated text.
-4. The files with the translated text are used to generate an InDesign file for each language for which we have translations for.
-5. These InDesign files must be opened in InDesign to check for any manual adjustments need. For example if a language is much longer than English, the font size may need to be reduced for a section.
-6. Once the translated file has been reviewed in InDesign it is ready to be exported as a PDF.
-
-Where InDesign is mentioned you'll need to ask a designer for them to do updates (with the translation process in mind). Next you'll need to make sure someone at IDEMS runs the scripts to extract the text for translation, and sends this to Translators Without Borders. Once the files with the extracted text are translated, IDEMS will run the scripts to generate InDesign files which a designer will do final edits and provide you with the translated PDF.
-
-## How can I run the scripts?
-Before you can run any of the scripts mentioned below you need to:
-1. Download and install NodeJS. [Click here to download NodeJS](https://nodejs.org/en/download/).
-2. Use git to checkout this repo
-3. Use a command line to run the command ```npm install``` in this folder
-
-## What do I need to keep in mind in InDesign to support translation?
+## What should the graphic designer keep in mind when creating the original InDesign file, so as to support translation?
 - English is a relatively compact language. For short peices of text assume that other languages could be up to 300% more characters, and for longer sections up to 170% more characters.
 - Expand text boxes as much as possible to support more characters than is in the English version.
-- Each section of the tip sheet should be it's own story. This is to prevent a longer text translation for one section overflowing to the next section.
-- For each story exapnd the story editor to take up the full width of the screen, and turn on the end of line symbol in the story editor. We want to make sure that each sentence that should be translated as one sentence does not have an unnecessary line break.
-- Avoid adjusting the format of specific peices of text within a story as this causes that peice of text to have to be translated seperately to the rest of the sentence to maintain the formatting. 
+- For each story expand the story editor to take up the full width of the screen, and turn on the end of line symbol in the story editor. We want to make sure that each sentence that should be translated as one sentence does not have an unnecessary line break.
+- Avoid adjusting the format of specific pieces of text within a story as this causes that piece of text to have to be translated seperately from the rest of the sentence, in order to maintain the formatting.
 - For the same reason DO NOT USE KERNING. Kerning results in each indivual letter needing translation.
 
-## What to do if I want to make changes to the tip sheets?
+## How to handle updates to the original InDesign file
 
-1. Make the changes in InDesign. Keep in mind the things need to enable translation.
-2. Save the tip sheets InDesign file as an IDML file, make sure it's called en.idml and save it in the input folder within this folder
-3. Next up run the script to extract the English text as a JSON file for translation by either
-    - Double clicking extract_english.bat (if on Windows)
-    - Running ```npm run extract``` in a command line (if on MacOS, Linux or Windows)
-4. Update this README to point to link to the Google Drive folder where the latest IDML file lives.
-5. The contents of the versioned_english_json can be sent to translators. If you know how to do this, please push changes made to files in versioned_english_json to Github. This is used to track when English text is added or removed (and therefore required additional translation).
-
-## What to do if I have received new translations and want to generate new PDFs?
-
-1. Place the translations in the translate_json folder. The translations should be 15 JSON files (one per page) each in a folder with the 2 letter language code for the translated language.
-    - e.g /tranlate_json/sw/page-1.json for tip sheet 1 in Kiswahili
-2. Run the translate script by either
-    - Double clicking generate_translated_indesign.bat (if on Windows)
-    - Running ```npm run translate``` in a command line (if on MacOS, Linux or Windows)
-3. The output folder will now have an InDesign file for every language witha translation.
-4. Open each IDML file in InDesign and check for any manual adjustments that are needed.
-5. Use InDesign to export the IDML files to PDF's.
-6. You can use [this plugin](https://redokun.com/resources/batch-convert-pdf-file) to do this in bulk
+1. If any changes are made to the original InDesign file after the translation process has started, it should be saved in IDML format in the project subfolder, under the `input` folder (for example `indesign-translate/input/Catalogo2022/Catalogo2022.idml`).
+2. Run the extraction script again, to update the source `translation.json` file: `npm run extract`.
+3. In the project folder under `translate_json`, make sure all updates from Github have been imported (run a `git pull`), then commit the changes to the source `translation.json` and push to the remote Github repo, for example:
+   ```bash
+   cd translate_json/Catalogo2022
+   git pull
+   git add it/translation.json
+   git commit -m "updated the source texts"
+   git push
+   ```
+4. If a weblate webhook has been set up on the Github repository, Weblate will immediately see the changes and adjust all the translation files to reflect the changes in the source file. This may then require reviewing all the language translations, accepting suggestions from previously translated strings that may have new keys to identify them.
