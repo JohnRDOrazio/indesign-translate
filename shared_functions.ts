@@ -1,8 +1,8 @@
 import { parse } from "fast-xml-parser";
-import * as DomParser from "dom-parser";
+import DomParser from "dom-parser";
 import { Html5Entities } from "html-entities";
-import * as fs from "fs";
-import * as path from "path";
+import fs from "fs";
+import path from "path";
 
 export type PSRType = "text" | "hyperlink";
 
@@ -44,7 +44,7 @@ export function storyXMLNullCheck(storyXmlParsed: { [x: string]: { Story: { Para
 
 export function extractStoryMap(storyFileContents: string): { [src: string]: string } {
     const storyXmlParsed = parse(storyFileContents, { arrayMode: true });
-    let storyTranslateMap = {};
+    let storyTranslateMap: {[key: string]: string} = {};
     let lastPsr: any;
     if (storyXMLNullCheck(storyXmlParsed)) {
         try {
@@ -54,8 +54,8 @@ export function extractStoryMap(storyFileContents: string): { [src: string]: str
                     psr.CharacterStyleRange.forEach((csr: { HyperlinkTextSource: { Content: string; }[]; Content: string | string[]; }) => {
                         if (csr.HyperlinkTextSource && csr.HyperlinkTextSource[0] && csr.HyperlinkTextSource[0].Content
                             && typeof csr.HyperlinkTextSource[0].Content === "string") {
-                            let str = removeForbiddenCharacters(csr.HyperlinkTextSource[0].Content + "");
-                            let cont = removeSomeForbiddenCharacters(csr.HyperlinkTextSource[0].Content + "")
+                            let str: string = removeForbiddenCharacters(csr.HyperlinkTextSource[0].Content + "");
+                            let cont: string = removeSomeForbiddenCharacters(csr.HyperlinkTextSource[0].Content + "")
                             storyTranslateMap[str] = cont;
                         }
                         if (csr.Content) {
@@ -156,39 +156,53 @@ export function psrListToHTML(psrList: PSRSummary[]): string {
 }
 
 export function htmlEntryToTextEntries(translateEntry: TranslationEntry): TranslationEntry[] {
-    let textEntries: TranslationEntry[] = [];
-    let domParser = new DomParser();
-    let sourceParsed = domParser.parseFromString("<html><body>" + translateEntry.sourceText + "</body></html>");
-    let translationParsed = domParser.parseFromString("<html><body>" + translateEntry.text + "</body></html>");
-    let sourceLinkElements = sourceParsed.getElementsByTagName("a");
-    for (let i = 0; i < sourceLinkElements.length; i++) {
-        let id = sourceLinkElements[i].getAttribute("id");
-        let sourceText = Html5Entities.decode(sourceLinkElements[i].textContent);
-        let text = Html5Entities.decode(translationParsed.getElementById(id).textContent);
-        let note = "";
-        if (sourceLinkElements[i].getAttribute("title")) {
-            note = "" + sourceLinkElements[i].getAttribute("title");
+    let textEntries: TranslationEntry[]         = [];
+    let domParser: DomParser                    = new DomParser();
+    let sourceParsed: DomParser.Dom             = domParser.parseFromString("<html><body>" + translateEntry.sourceText + "</body></html>");
+    let translationParsed: DomParser.Dom        = domParser.parseFromString("<html><body>" + translateEntry.text + "</body></html>");
+    let sourceLinkElements: DomParser.Node[] | null = sourceParsed.getElementsByTagName("a");
+    if( sourceLinkElements !== null && sourceLinkElements.length > 0 ) {
+        for (let i: number = 0; i < sourceLinkElements.length; i++) {
+            let id: string|null     = sourceLinkElements[i].getAttribute("id");
+            if( id !== null ) {
+                let sourceText: string  = Html5Entities.decode(sourceLinkElements[i].textContent);
+                let elId: DomParser.Node|null = translationParsed.getElementById(id);
+                if( elId !== null ){
+                    let text: string        = Html5Entities.decode(elId.textContent);
+                    let note: string        = "";
+                    if (sourceLinkElements[i].getAttribute("title") !== null) {
+                        note = "" + sourceLinkElements[i].getAttribute("title");
+                    }
+                    textEntries.push({
+                        sourceText: sourceText,
+                        storyId: translateEntry.storyId,
+                        text: text,
+                        note: note,
+                        type: "text"
+                    });
+                }
+            }
         }
-        textEntries.push({
-            sourceText: sourceText,
-            storyId: translateEntry.storyId,
-            text: text,
-            note: note,
-            type: "text"
-        });
     }
-    let sourceSpanElements = sourceParsed.getElementsByTagName("span");
-    for (let i = 0; i < sourceSpanElements.length; i++) {
-        let id = sourceSpanElements[i].getAttribute("id");
-        let sourceText = Html5Entities.decode(sourceSpanElements[i].textContent);
-        let text = Html5Entities.decode(translationParsed.getElementById(id).textContent);
-        textEntries.push({
-            sourceText: sourceText,
-            storyId: translateEntry.storyId,
-            text: text,
-            note: "",
-            type: "text"
-        });
+    let sourceSpanElements: DomParser.Node[]|null = sourceParsed.getElementsByTagName("span");
+    if( sourceSpanElements !== null && sourceSpanElements.length > 0 ) {
+        for (let i: number = 0; i < sourceSpanElements.length; i++) {
+            let id: string|null = sourceSpanElements[i].getAttribute("id");
+            if( id !== null ) {
+                let sourceText: string  = Html5Entities.decode(sourceSpanElements[i].textContent);
+                let elId: DomParser.Node|null = translationParsed.getElementById(id);
+                if( elId !== null ) {
+                    let text: string        = Html5Entities.decode(elId.textContent);
+                    textEntries.push({
+                        sourceText: sourceText,
+                        storyId: translateEntry.storyId,
+                        text: text,
+                        note: "",
+                        type: "text"
+                    });
+                }
+            }
+        }
     }
     return textEntries;
 }
@@ -212,15 +226,15 @@ export function pageFileNameForSpreadId(spreadIdsInOrder: string[], spreadId: st
 }
 
 export function getStoriesForSpread(spreadFileContents: string): string[] {
-    let tagStartString = `<TextFrame Self="`;
-    
-    let storyIdMap = [];
+    let tagStartString: string = `<TextFrame Self="`;
+
+    let storyIdMap: string[] = [];
     spreadFileContents.split("\n").forEach((line) => {
-        let index = line.indexOf(tagStartString);
+        let index: number = line.indexOf(tagStartString);
         if (index > -1 && line.indexOf(`ParentStory="`)) {
-            let afterParentStoryIndex = line.indexOf(`ParentStory="`) + `ParentStory="`.length;
-            let storyId = "";
-            for (var i = afterParentStoryIndex; i < line.length && line[i] !== `"`; i++) {
+            let afterParentStoryIndex: number = line.indexOf(`ParentStory="`) + `ParentStory="`.length;
+            let storyId: string = "";
+            for (var i: number = afterParentStoryIndex; i < line.length && line[i] !== `"`; i++) {
                 storyId += line[i];
             }
             storyIdMap.push(storyId);
@@ -229,15 +243,15 @@ export function getStoriesForSpread(spreadFileContents: string): string[] {
     return storyIdMap;
 }
 
-export function getIDMLFilePathForName(inputFolder: string, idmlName: string) {
-    let inputFilePath = path.join(inputFolder, idmlName, idmlName + ".idml");
+export function getIDMLFilePathForName(inputFolder: string, idmlName: string): string|null {
+    let inputFilePath: string = path.join(inputFolder, idmlName, idmlName + ".idml");
     if (!fs.existsSync(inputFilePath)) {
         try {
-            var actualIDMLFilename = fs.readdirSync(path.join(inputFolder, idmlName)).filter((filename) => filename.endsWith(".idml"))[0];
+            let actualIDMLFilename: string = fs.readdirSync(path.join(inputFolder, idmlName)).filter((filename) => filename.endsWith(".idml"))[0];
             inputFilePath = path.join(inputFolder, idmlName, actualIDMLFilename);
         } catch (ex) {
             console.warn("Cannot find any IDML file for folder ", path.join(inputFolder, idmlName));
-            inputFilePath = null;
+            return null;
         }
     }
     return inputFilePath;

@@ -9,29 +9,33 @@
     "sheet-to-json": "ts-node sheet_to_json.ts"
   },
   "dependencies": {
-    "@types/adm-zip": "^0.4.33",
-    "@types/dom-parser": "^0.1.0",
-    "@types/ncp": "^2.0.4",
-    "@types/node": "^12.0.0",
-    "@types/rimraf": "^3.0.0",
-    "@types/rmfr": "^2.0.0",
+    "@types/adm-zip": "^0.4.34",
+    "@types/dom-parser": "^0.1.1",
+    "@types/ncp": "^2.0.5",
+    "@types/node": "^12.20.43",
+    "@types/rimraf": "^3.0.2",
+    "@types/rmfr": "^2.0.1",
     "@types/string-similarity": "^3.0.0",
     "adm-zip": "^0.4.16",
     "dom-parser": "^0.1.6",
     "fast-xml-parser": "3.17.4",
-    "html-entities": "^1.3.1",
+    "html-entities": "^1.4.0",
     "ncp": "^2.0.0",
-    "pdf-lib": "^1.9.0",
+    "pdf-lib": "^1.17.1",
     "rimraf": "^3.0.2",
     "rmfr": "^2.0.0",
-    "string-similarity": "^4.0.2",
-    "ts-node": "^8.10.2",
-    "typescript": "^3.9.6",
-    "xlsx": "^0.16.6"
+    "string-similarity": "^4.0.4",
+    "ts-node": "^10.5.0",
+    "typescript": "^4.1.2",
+    "xlsx": "^0.16.9"
   },
   "author": "Michael Clapham",
   "contributors": [
-    {"name":"John D'Orazio","url":"https://github.com/JohnRDOrazio","email":"priest@johnromanodorazio.com"}
+    {
+      "name": "John D'Orazio",
+      "url": "https://github.com/JohnRDOrazio",
+      "email": "priest@johnromanodorazio.com"
+    }
   ],
   "license": "MIT"
 }

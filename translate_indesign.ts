@@ -1,14 +1,150 @@
-import * as fs from "fs";
-import * as path from "path";
-import * as AdmZip from "adm-zip";
-import * as rmfr from "rmfr";
+import fs from "fs";
+import path from "path";
+import AdmZip from "adm-zip";
+import rmfr from "rmfr";
 import { removeSomeForbiddenCharacters, extractStoryMap, getStoriesForSpread, getSpreadIdsInOrder, pageFileNameForSpreadId, TranslationEntry, getIDMLFilePathForName, htmlEntryToTextEntries } from "./shared_functions";
-import * as ncp from "ncp";
+import ncp from "ncp";
 
-const inputFolder         = "./input";
-const outputFolder        = "./output";
-const translateJSONPath   = "./translate_json";
-const tempFolder          = "./temp";
+const validIsoCodes = [
+    "aa",
+    "ab",
+    "af",
+    "am",
+    "ar",
+    "as",
+    "ay",
+    "az",
+    "ba",
+    "be",
+    "bg",
+    "bh",
+    "bi",
+    "bn",
+    "bo",
+    "ca",
+    "co",
+    "cs",
+    "cy",
+    "da",
+    "de",
+    "dz",
+    "el",
+    "en",
+    "eo",
+    "es",
+    "et",
+    "eu",
+    "fa",
+    "fi",
+    "fj",
+    "fo",
+    "fr",
+    "fy",
+    "ga",
+    "gl",
+    "gn",
+    "gu",
+    "ha",
+    "he",
+    "hi",
+    "hr",
+    "hu",
+    "hy",
+    "ia",
+    "id",
+    "ik",
+    "is",
+    "it",
+    "iu",
+    "ja",
+    "jv",
+    "ka",
+    "kk",
+    "kl",
+    "km",
+    "kn",
+    "ko",
+    "ks",
+    "ku",
+    "ky",
+    "la",
+    "ln",
+    "lo",
+    "lt",
+    "lv",
+    "mg",
+    "mi",
+    "mk",
+    "ml",
+    "mn",
+    "mr",
+    "ms",
+    "mt",
+    "my",
+    "na",
+    "ne",
+    "nl",
+    "no",
+    "oc",
+    "om",
+    "or",
+    "pa",
+    "pl",
+    "ps",
+    "pt",
+    "qu",
+    "rm",
+    "rn",
+    "ro",
+    "ru",
+    "rw",
+    "sa",
+    "sd",
+    "si",
+    "sk",
+    "sl",
+    "sm",
+    "sn",
+    "so",
+    "sq",
+    "sr",
+    "ss",
+    "st",
+    "su",
+    "sv",
+    "sw",
+    "ta",
+    "te",
+    "tg",
+    "th",
+    "ti",
+    "tk",
+    "tl",
+    "tn",
+    "to",
+    "tr",
+    "ts",
+    "tt",
+    "tw",
+    "ug",
+    "uk",
+    "ur",
+    "uz",
+    "vi",
+    "vo",
+    "wo",
+    "xh",
+    "yi",
+    "yo",
+    "za",
+    "zh",
+    "zu"
+];
+
+const inputFolder: string       = "./input";
+const outputFolder: string      = "./output";
+const translateJSONPath: string = "./translate_json";
+const tempFolder: string        = "./temp";
 
 async function ncpPromise(from: string, to: string): Promise<any> {
     return new Promise<void>((resolve, reject) => {
@@ -33,8 +169,8 @@ async function translateIDMLFiles() {
         fs.mkdirSync(outputFolder);
         console.log("Removed output directory");
 
-        let fileNames = fs.readdirSync(inputFolder);
-        const idmlDirectoryNames = fileNames.filter((fileName) => fs.statSync(path.join(inputFolder, fileName)).isDirectory());
+        let fileNames: string[] = fs.readdirSync(inputFolder);
+        const idmlDirectoryNames: string[] = fileNames.filter((fileName) => fs.statSync(path.join(inputFolder, fileName)).isDirectory());
         for (let idmlName of idmlDirectoryNames) {
             await ncpPromise(path.join(inputFolder, idmlName), path.join(outputFolder, idmlName));
             console.log("Copied input to output folder for ", path.join(inputFolder, idmlName));
@@ -53,7 +189,7 @@ translateIDMLFiles().then(() => {
 function translateIDML(idmlName: string) {
     let sourceLang: string = 'en';
     // Create temp path for extracted contents of this IDML file
-    const tempPath = path.join(tempFolder, idmlName);
+    const tempPath: string = path.join(tempFolder, idmlName);
     if (!fs.existsSync(tempPath)) {
         fs.mkdirSync(tempPath);
         console.log("Created non existent temp path " + tempPath);
@@ -66,7 +202,7 @@ function translateIDML(idmlName: string) {
         console.log("Created non existent output path " + outputSubPath);
     }
 
-    let inputFilePath = getIDMLFilePathForName(inputFolder, idmlName);
+    let inputFilePath: string|null = getIDMLFilePathForName(inputFolder, idmlName);
     if (inputFilePath === null) {
         console.warn("Could not find IDML file for ", idmlName);
         return;
@@ -74,14 +210,14 @@ function translateIDML(idmlName: string) {
         sourceLang = inputFilePath.split(/.*[\/|\\]/)[1].split('.')[0];
         console.log("Detected source lang: ", sourceLang);
     }
-    let inputZip = new AdmZip(inputFilePath);
+    let inputZip: AdmZip = new AdmZip(inputFilePath);
 
-    let translateJSONSubPath = path.join(translateJSONPath, idmlName);
-    let languageCodes = fs.readdirSync(translateJSONSubPath).filter((langCode) => langCode !== sourceLang );
+    let translateJSONSubPath: string = path.join(translateJSONPath, idmlName);
+    let languageCodes: string[] = fs.readdirSync(translateJSONSubPath).filter((langCode) => langCode !== sourceLang && validIsoCodes.includes(langCode) );
 
     for (let langCode of languageCodes) {
 
-        const tempPathTranslated = path.join(tempPath, langCode);
+        const tempPathTranslated: string = path.join(tempPath, langCode);
         if (!fs.existsSync(tempPathTranslated)) {
             fs.mkdirSync(tempPathTranslated);
             console.log("Created non existent temp path " + tempPathTranslated);
@@ -95,7 +231,7 @@ function translateIDML(idmlName: string) {
         translateStoriesXML(tempPathTranslated, langCode, idmlName);
 
         // Combine files back into ZIP file for output InDesign Markup file
-        const outputZip = new AdmZip();
+        const outputZip: AdmZip = new AdmZip();
         fs.readdirSync(tempPathTranslated).forEach((file) => {
             try {
                 var filePath = path.join(tempPathTranslated, file);
@@ -109,7 +245,7 @@ function translateIDML(idmlName: string) {
             }
         });
         
-        const outputZipPath = path.join(outputSubPath, langCode + ".idml");
+        const outputZipPath: string = path.join(outputSubPath, langCode + ".idml");
         console.log("Writing InDesign Markup File for", idmlName, "for language code", langCode);
         outputZip.writeZip(outputZipPath);
         // rimraf(tempPath, (err) => {});
@@ -117,12 +253,12 @@ function translateIDML(idmlName: string) {
 }
 
 function translateStoriesXML(folder: string, langCode: string, idmlName: string) {
-    const storiesPath = path.join(folder, "Stories");
-    const spreadsPath = path.join(folder, "Spreads");
-    const spreadIdsInOrder = getSpreadIdsInOrder(folder);
-    const translateObjPath = path.join(translateJSONPath, idmlName, langCode, 'translation.json');
+    const storiesPath: string           = path.join(folder, "Stories");
+    const spreadsPath: string           = path.join(folder, "Spreads");
+    const spreadIdsInOrder: string[]    = getSpreadIdsInOrder(folder);
+    const translateObjPath: string      = path.join(translateJSONPath, idmlName, langCode, 'translation.json');
     console.log('Parsing JSON from ',translateObjPath,'...');
-    const translationObj = JSON.parse(fs.readFileSync(translateObjPath).toString());
+    const translationObj: {[key: string]: {[key: string]: {[key: string]: string} } } = JSON.parse(fs.readFileSync(translateObjPath).toString());
     fs.readdirSync(spreadsPath).forEach((spreadFile) => {
         const spreadId = spreadFile.replace("Spread_", "").replace(".xml", "");
         const spreadFilePath = path.join(spreadsPath, spreadFile);
@@ -135,9 +271,9 @@ function translateStoriesXML(folder: string, langCode: string, idmlName: string)
         storyIds.forEach((storyId) => perStoryTranslateMap[storyId] = {});
         console.log( perStoryTranslateMap );
         //let pageFileName: string;
-        let spreadTranslateEntries: TranslationEntry[] = [];
-        let pageId: string;
-        let pageObj: object;
+        let spreadTranslateEntries: TranslationEntry[];
+        let pageId: string = '';
+        let pageObj: {[key: string]: {[key: string]: string} };
         //let spreadTranslateEntries = [];
         try {
             //pageFileName = pageFileNameForSpreadId(spreadIdsInOrder, spreadId);
@@ -146,13 +282,12 @@ function translateStoriesXML(folder: string, langCode: string, idmlName: string)
             console.log('Retrieving translation strings for page',pageId,'...');
             //const pageFilePath = path.join(translateJSONPath, idmlName, langCode, pageFileName);
             //spreadTranslateEntries = JSON.parse(fs.readFileSync(pageFilePath).toString());
-            let objx: TranslationEntry;
             if( translationObj.hasOwnProperty(pageId) ) {
                 console.log( 'Found pageId',pageId,'in translationObj, now retrieving pageObj...');
                 pageObj = translationObj[pageId];
-                spreadTranslateEntries = Object.keys(pageObj).reduce((previousValue, storyId) => {
+                spreadTranslateEntries = Object.keys(pageObj).reduce((previousValue: TranslationEntry[], storyId: string) => {
                     Object.keys(pageObj[storyId]).forEach(srcText => {
-                        objx = {
+                        let objx: TranslationEntry = {
                             sourceText: srcText,
                             text: pageObj[storyId][srcText],
                             storyId: storyId,
@@ -191,7 +326,7 @@ function translateStoriesXML(folder: string, langCode: string, idmlName: string)
             //console.log(pageObj);
         } catch (ex) {
             console.debug(ex);
-            if( pageId ) {
+            if( pageId !== '' ) {
                 console.log("In InDesign file", idmlName, ("Missing pageId " + pageId + " in translation file for language"), langCode);
             } else {
                 console.log("In InDesign file", idmlName, "Missing translation file for spread id", spreadId, "for language", langCode);
