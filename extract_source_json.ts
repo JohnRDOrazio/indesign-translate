@@ -1,14 +1,12 @@
 import * as fs from "fs"
 import * as path from "path"
-//import { parse, j2xParser as JS2XMLParser } from "fast-xml-parser"
 import * as AdmZip from "adm-zip"
 import * as rimraf from "rimraf"
-import { getStoriesForSpread, removeForbiddenCharacters, removeSomeForbiddenCharacters, getSpreadIdsInOrder, pageFileNameForSpreadId, TranslationEntry, getIDMLFilePathForName, extractStoryPSRList, psrListToHTML } from "./shared_functions" //extractStoryMap
-//import { exit } from "process"
+import { getStoriesForSpread, removeForbiddenCharacters, removeSomeForbiddenCharacters, getSpreadIdsInOrder, pageFileNameForSpreadId, TranslationEntry, getIDMLFilePathForName, extractStoryPSRList, psrListToHTML } from "./shared_functions"
 
-let inputFolder = "./input";
-let translateJSONFolder = "./translate_json";
-let tempFolder = "./temp";
+let inputFolder: string = "./input";
+let translateJSONFolder: string = "./translate_json";
+let tempFolder: string = "./temp";
 
 rimraf(tempFolder, (err) => {
     if (err) {
@@ -23,21 +21,24 @@ rimraf(tempFolder, (err) => {
     fs.readdirSync(inputFolder).forEach((idmlName) => {
         let inputSubPath = path.join(inputFolder, idmlName);
         if (fs.statSync(inputSubPath).isDirectory()) {
-            extractEnglishJSON(idmlName);
+            extractSourceJSON(idmlName);
         }
     });
-    ;
 });
 
-function extractEnglishJSON(idmlName: string) {
+function extractSourceJSON(idmlName: string) {
 
     const tempPath = path.join(tempFolder, idmlName);
     fs.mkdirSync(tempPath);
+    let sourceLang: string = 'en';
 
     let inputFilePath = getIDMLFilePathForName(inputFolder, idmlName);
     if (inputFilePath === null) {
         console.warn("Could not find IDML file for ", idmlName);
         return;
+    } else {
+        sourceLang = inputFilePath.split(/.*[\/|\\]/)[1].split('.')[0];
+        console.log("Detected source lang: ",sourceLang);
     }
 
     console.log("Extracting text from " + inputFilePath + "...");
@@ -58,7 +59,7 @@ function extractEnglishJSON(idmlName: string) {
 
     if (!fs.existsSync(path.join(translateJSONPath, "it"))) {
         fs.mkdirSync(path.join(translateJSONPath, "it"));
-        console.log("Created non existent path " + path.join(translateJSONPath, "it") + "...");
+        console.log("Created non existent path " + path.join(translateJSONPath, sourceLang) + "...");
     }
 
     const spreadIdsInOrder = getSpreadIdsInOrder(tempPathFull);
@@ -121,9 +122,9 @@ function extractEnglishJSON(idmlName: string) {
                 });
             }
         });
-        //fs.writeFileSync(path.join(translateJSONPath, "it", pageFileName), JSON.stringify(translateStructure, null, 4));
-        //console.log("Wrote file " + path.join(translateJSONPath, "it", pageFileName));
+        //fs.writeFileSync(path.join(translateJSONPath, sourceLang, pageFileName), JSON.stringify(translateStructure, null, 4));
+        //console.log("Wrote file " + path.join(translateJSONPath, sourceLang, pageFileName));
     });
-    fs.writeFileSync(path.join(translateJSONPath, "it", "translation.json"), JSON.stringify(translationObj, null, 4)); 
-    console.log("Wrote file " + path.join(translateJSONPath, "it", "translation.json"));
+    fs.writeFileSync(path.join(translateJSONPath, sourceLang, "translation.json"), JSON.stringify(translationObj, null, 4)); 
+    console.log("Wrote file " + path.join(translateJSONPath, sourceLang, "translation.json"));
 }
