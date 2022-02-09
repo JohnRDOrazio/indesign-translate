@@ -1,6 +1,6 @@
 import { parse } from "fast-xml-parser";
 import * as DomParser from "dom-parser";
-import {Html5Entities} from "html-entities";
+import { Html5Entities } from "html-entities";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -23,11 +23,16 @@ export interface TranslationEntry {
 
 export function removeForbiddenCharacters(str: string) {
     return str
-        .replace("\u2028", "") // Remove Line Seperator character
-        .replace("\u2029", "") // Remove Paragraph Seperator character
+        .replace(/\u2028/g, "") // Remove Line Separator character
+        .replace(/\u2029/g, "") // Remove Paragraph Separator character
 }
 
-export function storyXMLNullCheck(storyXmlParsed): boolean {
+export function removeSomeForbiddenCharacters(str: string) {
+    return str
+        .replace(/\u2029/g, "") // Remove Paragraph Separator character
+}
+
+export function storyXMLNullCheck(storyXmlParsed: { [x: string]: { Story: { ParagraphStyleRange: string | any[]; }[]; }[]; }): boolean {
     if (storyXmlParsed && storyXmlParsed["idPkg:Story"][0] && storyXmlParsed["idPkg:Story"][0]
         && storyXmlParsed["idPkg:Story"][0].Story[0] && storyXmlParsed["idPkg:Story"][0].Story[0].ParagraphStyleRange
         && storyXmlParsed["idPkg:Story"][0].Story[0].ParagraphStyleRange.length > 0) {
@@ -37,29 +42,32 @@ export function storyXMLNullCheck(storyXmlParsed): boolean {
 }
 
 
-export function extractStoryMap(storyFileContents: string): { [en: string]: string } {
+export function extractStoryMap(storyFileContents: string): { [src: string]: string } {
     const storyXmlParsed = parse(storyFileContents, { arrayMode: true });
     let storyTranslateMap = {};
-    let lastPsr;
+    let lastPsr: any;
     if (storyXMLNullCheck(storyXmlParsed)) {
         try {
-            storyXmlParsed["idPkg:Story"][0].Story[0].ParagraphStyleRange.forEach((psr) => {
+            storyXmlParsed["idPkg:Story"][0].Story[0].ParagraphStyleRange.forEach((psr: { CharacterStyleRange: { HyperlinkTextSource: { Content: string; }[]; Content: string | string[]; }[]; }) => {
                 lastPsr = psr;
                 if (psr.CharacterStyleRange && psr.CharacterStyleRange.length > 0) {
-                    psr.CharacterStyleRange.forEach((csr) => {
+                    psr.CharacterStyleRange.forEach((csr: { HyperlinkTextSource: { Content: string; }[]; Content: string | string[]; }) => {
                         if (csr.HyperlinkTextSource && csr.HyperlinkTextSource[0] && csr.HyperlinkTextSource[0].Content
                             && typeof csr.HyperlinkTextSource[0].Content === "string") {
                             let str = removeForbiddenCharacters(csr.HyperlinkTextSource[0].Content + "");
-                            storyTranslateMap[str] = str;
+                            let cont = removeSomeForbiddenCharacters(csr.HyperlinkTextSource[0].Content + "")
+                            storyTranslateMap[str] = cont;
                         }
                         if (csr.Content) {
                             if (typeof csr.Content === "string" || typeof csr.Content === "number") {
                                 let str = removeForbiddenCharacters(csr.Content + "");
-                                storyTranslateMap[str] = str;
+                                let cont = removeSomeForbiddenCharacters(csr.Content + "");
+                                storyTranslateMap[str] = cont;
                             } else if (Array.isArray(csr.Content)) {
-                                csr.Content.forEach((str) => {
-                                    str = removeForbiddenCharacters(str);
-                                    storyTranslateMap[str] = str;
+                                csr.Content.forEach((str: string) => {
+                                    let strClean = removeForbiddenCharacters(str);
+                                    let cont = removeSomeForbiddenCharacters(str);
+                                    storyTranslateMap[strClean] = cont;
                                 });
                             }
                         }
@@ -77,7 +85,8 @@ export function extractStoryMap(storyFileContents: string): { [en: string]: stri
 }
 
 export function textToPSRSummary(text: string | number): PSRSummary {
-    let str = removeForbiddenCharacters(text + "");
+    //let str = removeForbiddenCharacters(text + "");
+    let str = removeSomeForbiddenCharacters(text + "");
     return {
         content: str,
         type: "text"
@@ -87,16 +96,17 @@ export function textToPSRSummary(text: string | number): PSRSummary {
 export function extractStoryPSRList(storyFileContents: string): PSRSummary[] {
     const storyXmlParsed = parse(storyFileContents, { arrayMode: true, ignoreAttributes: false });
     let psrSummaryList: PSRSummary[] = [];
-    let lastPsr;
+    let lastPsr: any;
     if (storyXMLNullCheck(storyXmlParsed)) {
         try {
-            storyXmlParsed["idPkg:Story"][0].Story[0].ParagraphStyleRange.forEach((psr) => {
+            storyXmlParsed["idPkg:Story"][0].Story[0].ParagraphStyleRange.forEach((psr: { CharacterStyleRange: any[]; }) => {
                 lastPsr = psr;
                 if (psr.CharacterStyleRange && psr.CharacterStyleRange.length > 0) {
                     psr.CharacterStyleRange.forEach((csr) => {
                         if (csr.HyperlinkTextSource && csr.HyperlinkTextSource[0] && csr.HyperlinkTextSource[0].Content
                             && typeof csr.HyperlinkTextSource[0].Content === "string") {
-                            let str = removeForbiddenCharacters(csr.HyperlinkTextSource[0].Content + "");
+                            //let str = removeForbiddenCharacters(csr.HyperlinkTextSource[0].Content + "");
+                            let str = removeSomeForbiddenCharacters(csr.HyperlinkTextSource[0].Content + "");
                             let psrSummary: PSRSummary = {
                                 content: str,
                                 type: "hyperlink",
@@ -148,16 +158,16 @@ export function psrListToHTML(psrList: PSRSummary[]): string {
 export function htmlEntryToTextEntries(translateEntry: TranslationEntry): TranslationEntry[] {
     let textEntries: TranslationEntry[] = [];
     let domParser = new DomParser();
-    let englishParsed = domParser.parseFromString("<html><body>" + translateEntry.sourceText + "</body></html>");
+    let sourceParsed = domParser.parseFromString("<html><body>" + translateEntry.sourceText + "</body></html>");
     let translationParsed = domParser.parseFromString("<html><body>" + translateEntry.text + "</body></html>");
-    let englishLinkElements = englishParsed.getElementsByTagName("a");
-    for (let i = 0; i < englishLinkElements.length; i++) {
-        let id = englishLinkElements[i].getAttribute("id");
-        let sourceText = Html5Entities.decode(englishLinkElements[i].textContent);
+    let sourceLinkElements = sourceParsed.getElementsByTagName("a");
+    for (let i = 0; i < sourceLinkElements.length; i++) {
+        let id = sourceLinkElements[i].getAttribute("id");
+        let sourceText = Html5Entities.decode(sourceLinkElements[i].textContent);
         let text = Html5Entities.decode(translationParsed.getElementById(id).textContent);
         let note = "";
-        if (englishLinkElements[i].getAttribute("title")) {
-            note = "" + englishLinkElements[i].getAttribute("title");
+        if (sourceLinkElements[i].getAttribute("title")) {
+            note = "" + sourceLinkElements[i].getAttribute("title");
         }
         textEntries.push({
             sourceText: sourceText,
@@ -167,10 +177,10 @@ export function htmlEntryToTextEntries(translateEntry: TranslationEntry): Transl
             type: "text"
         });
     }
-    let englishSpanElements = englishParsed.getElementsByTagName("span");
-    for (let i = 0; i < englishSpanElements.length; i++) {
-        let id = englishSpanElements[i].getAttribute("id");
-        let sourceText = Html5Entities.decode(englishSpanElements[i].textContent);
+    let sourceSpanElements = sourceParsed.getElementsByTagName("span");
+    for (let i = 0; i < sourceSpanElements.length; i++) {
+        let id = sourceSpanElements[i].getAttribute("id");
+        let sourceText = Html5Entities.decode(sourceSpanElements[i].textContent);
         let text = Html5Entities.decode(translationParsed.getElementById(id).textContent);
         textEntries.push({
             sourceText: sourceText,
@@ -197,14 +207,14 @@ export function getSpreadIdsInOrder(tempPath: string) {
     return spreadIdsInOrder;
 }
 
-export function pageFileNameForSpreadId(spreadIdsInOrder: string[], spreadId: string) {
-    return `page-${spreadIdsInOrder.indexOf(spreadId) + 1}.json`;
+export function pageFileNameForSpreadId(spreadIdsInOrder: string[], spreadId: string) : string {
+    return `page-${spreadIdsInOrder.indexOf(spreadId) + 1}`;
 }
 
 export function getStoriesForSpread(spreadFileContents: string): string[] {
     let tagStartString = `<TextFrame Self="`;
     
-    let storyIdMap = {};
+    let storyIdMap = [];
     spreadFileContents.split("\n").forEach((line) => {
         let index = line.indexOf(tagStartString);
         if (index > -1 && line.indexOf(`ParentStory="`)) {
@@ -213,10 +223,10 @@ export function getStoriesForSpread(spreadFileContents: string): string[] {
             for (var i = afterParentStoryIndex; i < line.length && line[i] !== `"`; i++) {
                 storyId += line[i];
             }
-            storyIdMap[storyId] = "";
+            storyIdMap.push(storyId);
         }
     });
-    return Object.keys(storyIdMap);
+    return storyIdMap;
 }
 
 export function getIDMLFilePathForName(inputFolder: string, idmlName: string) {
