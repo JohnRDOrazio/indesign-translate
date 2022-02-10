@@ -1,4 +1,4 @@
-import { parse } from "fast-xml-parser";
+import { XMLParser } from "fast-xml-parser";
 import DomParser from "dom-parser";
 import { Html5Entities } from "html-entities";
 import fs from "fs";
@@ -42,10 +42,23 @@ export function storyXMLNullCheck(storyXmlParsed: { [x: string]: { Story: { Para
 }
 
 
-export function extractStoryMap(storyFileContents: string): { [src: string]: string } {
-    const storyXmlParsed = parse(storyFileContents, { arrayMode: true });
+export function extractStoryMap(storyFileContents: string): {[key: string]: string} {
+    const alwaysArray = [
+        'idPkg:Story',
+        'idPkg:Story.Story',
+        'idPkg:Story.Story.ParagraphStyleRange',
+        'idPkg:Story.Story.ParagraphStyleRange.CharacterStyleRange',
+        'idPkg:Story.Story.ParagraphStyleRange.CharacterStyleRange.HyperlinkTextSource'
+    ];
+    const parser = new XMLParser({
+        isArray: (name, jpath, isLeafNode, isAttribute) => { 
+            return (alwaysArray.indexOf(jpath) !== -1);
+        }
+    });
+    const storyXmlParsed = parser.parse(storyFileContents);
+    //if( storyXmlParsed["idPkg:Story"][0].Story[0] )
     let storyTranslateMap: {[key: string]: string} = {};
-    let lastPsr: any;
+    let lastPsr: { CharacterStyleRange: { HyperlinkTextSource: { Content: string; }[]; Content: string | string[]; }[]; }|null = null;
     if (storyXMLNullCheck(storyXmlParsed)) {
         try {
             storyXmlParsed["idPkg:Story"][0].Story[0].ParagraphStyleRange.forEach((psr: { CharacterStyleRange: { HyperlinkTextSource: { Content: string; }[]; Content: string | string[]; }[]; }) => {
@@ -94,7 +107,21 @@ export function textToPSRSummary(text: string | number): PSRSummary {
 }
 
 export function extractStoryPSRList(storyFileContents: string): PSRSummary[] {
-    const storyXmlParsed = parse(storyFileContents, { arrayMode: true, ignoreAttributes: false });
+    const alwaysArray = [
+        'idPkg:Story',
+        'idPkg:Story.Story',
+        'idPkg:Story.Story.ParagraphStyleRange',
+        'idPkg:Story.Story.ParagraphStyleRange.CharacterStyleRange',
+        'idPkg:Story.Story.ParagraphStyleRange.CharacterStyleRange.HyperlinkTextSource'
+    ];
+    const parser = new XMLParser({
+        ignoreAttributes: false,
+        isArray: (name, jpath, isLeafNode, isAttribute) => { 
+            return (alwaysArray.indexOf(jpath) !== -1);
+        }
+    });
+    const storyXmlParsed = parser.parse(storyFileContents);
+
     let psrSummaryList: PSRSummary[] = [];
     let lastPsr: any;
     if (storyXMLNullCheck(storyXmlParsed)) {
@@ -105,7 +132,6 @@ export function extractStoryPSRList(storyFileContents: string): PSRSummary[] {
                     psr.CharacterStyleRange.forEach((csr) => {
                         if (csr.HyperlinkTextSource && csr.HyperlinkTextSource[0] && csr.HyperlinkTextSource[0].Content
                             && typeof csr.HyperlinkTextSource[0].Content === "string") {
-                            //let str = removeForbiddenCharacters(csr.HyperlinkTextSource[0].Content + "");
                             let str = removeSomeForbiddenCharacters(csr.HyperlinkTextSource[0].Content + "");
                             let psrSummary: PSRSummary = {
                                 content: str,
@@ -209,7 +235,9 @@ export function htmlEntryToTextEntries(translateEntry: TranslationEntry): Transl
 
 export function getSpreadIdsInOrder(tempPath: string) {
     const designMapFileContents = fs.readFileSync(path.join(tempPath, "designmap.xml")).toString();
-    const designMapParsed = parse(designMapFileContents, { ignoreAttributes: false });
+    const parser = new XMLParser({ ignoreAttributes: false });
+    const designMapParsed = parser.parse(designMapFileContents);
+
     let designMapSpreads: any[] = designMapParsed.Document["idPkg:Spread"];
     if (!Array.isArray(designMapSpreads)) {
         designMapSpreads = [designMapParsed.Document["idPkg:Spread"]];

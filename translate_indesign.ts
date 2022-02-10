@@ -269,19 +269,13 @@ function translateStoriesXML(folder: string, langCode: string, idmlName: string)
         let perStoryTranslateMap: { [storyId: string]: { [srcLang: string]: string } } = {};
         let nonStoryTranslateMap: { [srcLang: string]: string } = {};
         storyIds.forEach((storyId) => perStoryTranslateMap[storyId] = {});
-        console.log( perStoryTranslateMap );
-        //let pageFileName: string;
         let spreadTranslateEntries: TranslationEntry[];
         let pageId: string = '';
         let pageObj: {[key: string]: {[key: string]: string} };
-        //let spreadTranslateEntries = [];
         try {
-            //pageFileName = pageFileNameForSpreadId(spreadIdsInOrder, spreadId);
             pageId = pageFileNameForSpreadId(spreadIdsInOrder, spreadId);
             console.log('spreadId',spreadId,'translates to pageId',pageId);
             console.log('Retrieving translation strings for page',pageId,'...');
-            //const pageFilePath = path.join(translateJSONPath, idmlName, langCode, pageFileName);
-            //spreadTranslateEntries = JSON.parse(fs.readFileSync(pageFilePath).toString());
             if( translationObj.hasOwnProperty(pageId) ) {
                 console.log( 'Found pageId',pageId,'in translationObj, now retrieving pageObj...');
                 pageObj = translationObj[pageId];
@@ -340,9 +334,14 @@ function translateStoriesXML(folder: string, langCode: string, idmlName: string)
             const storyFileContents = fs.readFileSync(path.join(storiesPath, storyFile)).toString();
             let modifiedXML = removeSomeForbiddenCharacters(storyFileContents);
             let storyTranslateMap = extractStoryMap(storyFileContents);
+            console.log(storyTranslateMap);
             Object.keys(storyTranslateMap).forEach((key) => {
                 if (perStoryTranslateMap[storyId][key]) {
-                    modifiedXML = modifiedXML.replace(key, perStoryTranslateMap[storyId][key]);
+                    //IMPORTANT! After updating the fast-xml-parser library, html entities were transformed into utf8 character equivalents
+                    //Now, when searching the original text so as to perform a substitution,
+                    //we have to make sure we are looking for a string with html entities, not with utf8 character equivalents!
+                    modifiedXML = modifiedXML.replace(key.replace(/&/g, '&amp;'), perStoryTranslateMap[storyId][key].replace(/&/g, '&amp;'));
+                    console.log( modifiedXML );
                 } else if (nonStoryTranslateMap[key]) {
                     console.warn("Translation used but no story id", key, nonStoryTranslateMap[key]);
                     modifiedXML.replace(key, nonStoryTranslateMap[key]);
