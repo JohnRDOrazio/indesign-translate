@@ -341,19 +341,20 @@ function translateStoriesXML(folder: string, langCode: string, idmlName: string)
                     //IMPORTANT! After updating the fast-xml-parser library, html entities were transformed into utf8 character equivalents
                     //Now, when searching the original text so as to perform a substitution,
                     //we have to make sure we are looking for a string with html entities, not with utf8 character equivalents!
-                    modifiedXML = modifiedXML.replace(encode( key, {mode: 'specialChars'}), encode( perStoryTranslateMap[storyId][key], {mode: 'specialChars'}) );
-                    console.log('key:',key);
-                    console.log('key encoded:', encode( key, {mode: 'specialChars'}));
-                    console.log('perStoryTranslateMap:', perStoryTranslateMap[storyId][key]);
-                    console.log('perStoryTranslateMap encoded:', encode( perStoryTranslateMap[storyId][key], {mode: 'specialChars'}) );
+                    modifiedXML = modifiedXML.replace(encode( storyTranslateMap[key], {mode: 'specialChars'}), encode( perStoryTranslateMap[storyId][key], {mode: 'specialChars'}) );
+                    //console.log('search:',storyTranslateMap[key]);
+                    //console.log('search encoded:', encode( storyTranslateMap[key], {mode: 'specialChars'}));
+                    //console.log('replace:', perStoryTranslateMap[storyId][key]);
+                    //console.log('replace encoded:', encode( perStoryTranslateMap[storyId][key], {mode: 'specialChars'}) );
                 } else if (nonStoryTranslateMap[key]) {
                     console.warn("Translation used but no story id", key, nonStoryTranslateMap[key]);
                     modifiedXML.replace(key, nonStoryTranslateMap[key]);
                 } else {
                     console.warn("In InDesign file", idmlName, "Missing translation for", key);
                 }
-            })
-            //if( storyId === 'u714' ) process.exit();
+            });
+            //console.log( modifiedXML );
+            //if( storyId === 'ufab' ) process.exit();
             console.log('Writing translated story file',path.join(storiesPath, storyFile));
             fs.writeFileSync(path.join(storiesPath, storyFile), modifiedXML, { flag: "w+" });
         });

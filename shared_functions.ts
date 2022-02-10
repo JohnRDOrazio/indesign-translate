@@ -64,6 +64,7 @@ export function extractStoryMap(storyFileContents: string): {[key: string]: stri
             storyXmlParsed["idPkg:Story"][0].Story[0].ParagraphStyleRange.forEach((psr: { CharacterStyleRange: { HyperlinkTextSource: { Content: string; }[]; Content: string | string[]; }[]; }) => {
                 lastPsr = psr;
                 if (psr.CharacterStyleRange && psr.CharacterStyleRange.length > 0) {
+                    //console.log( psr.CharacterStyleRange );
                     psr.CharacterStyleRange.forEach((csr: { HyperlinkTextSource: { Content: string; }[]; Content: string | string[]; }) => {
                         if (csr.HyperlinkTextSource && csr.HyperlinkTextSource[0] && csr.HyperlinkTextSource[0].Content
                             && typeof csr.HyperlinkTextSource[0].Content === "string") {
