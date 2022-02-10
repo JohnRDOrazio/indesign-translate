@@ -1,10 +1,10 @@
-import { XMLParser } from "fast-xml-parser";
-import DomParser from "dom-parser";
-import { Html5Entities } from "html-entities";
-import fs from "fs";
-import path from "path";
+import { XMLParser } from "fast-xml-parser"
+import DomParser from "dom-parser"
+import { encode, decode } from "html-entities"
+import fs from "fs"
+import path from "path"
 
-export type PSRType = "text" | "hyperlink";
+export type PSRType = "text" | "hyperlink"
 
 export interface PSRSummary {
     content: string;
@@ -172,7 +172,7 @@ export function psrListToHTML(psrList: PSRSummary[]): string {
         if (!title) {
             title = "";
         }
-        let text = Html5Entities.encode(psrSummary.content);
+        let text = encode(psrSummary.content, { level: 'html5' });
         if (psrSummary.type === "hyperlink") {
             return `<a id="${id}" title="${title}">${text}</a>`;
         } else {
@@ -191,10 +191,10 @@ export function htmlEntryToTextEntries(translateEntry: TranslationEntry): Transl
         for (let i: number = 0; i < sourceLinkElements.length; i++) {
             let id: string|null     = sourceLinkElements[i].getAttribute("id");
             if( id !== null ) {
-                let sourceText: string  = Html5Entities.decode(sourceLinkElements[i].textContent);
+                let sourceText: string  = decode(sourceLinkElements[i].textContent, { level: 'html5' });
                 let elId: DomParser.Node|null = translationParsed.getElementById(id);
                 if( elId !== null ){
-                    let text: string        = Html5Entities.decode(elId.textContent);
+                    let text: string        = decode(elId.textContent, { level: 'html5' });
                     let note: string        = "";
                     if (sourceLinkElements[i].getAttribute("title") !== null) {
                         note = "" + sourceLinkElements[i].getAttribute("title");
@@ -215,10 +215,10 @@ export function htmlEntryToTextEntries(translateEntry: TranslationEntry): Transl
         for (let i: number = 0; i < sourceSpanElements.length; i++) {
             let id: string|null = sourceSpanElements[i].getAttribute("id");
             if( id !== null ) {
-                let sourceText: string  = Html5Entities.decode(sourceSpanElements[i].textContent);
+                let sourceText: string  = decode(sourceSpanElements[i].textContent, { level: 'html5' });
                 let elId: DomParser.Node|null = translationParsed.getElementById(id);
                 if( elId !== null ) {
-                    let text: string        = Html5Entities.decode(elId.textContent);
+                    let text: string        = decode(elId.textContent, { level: 'html5' });
                     textEntries.push({
                         sourceText: sourceText,
                         storyId: translateEntry.storyId,

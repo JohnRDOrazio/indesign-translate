@@ -1,9 +1,10 @@
-import fs from "fs";
-import path from "path";
-import AdmZip from "adm-zip";
-import rmfr from "rmfr";
-import { removeSomeForbiddenCharacters, extractStoryMap, getStoriesForSpread, getSpreadIdsInOrder, pageFileNameForSpreadId, TranslationEntry, getIDMLFilePathForName, htmlEntryToTextEntries } from "./shared_functions";
-import ncp from "ncp";
+import fs from "fs"
+import path from "path"
+import AdmZip from "adm-zip"
+import rmfr from "rmfr"
+import { removeSomeForbiddenCharacters, extractStoryMap, getStoriesForSpread, getSpreadIdsInOrder, pageFileNameForSpreadId, TranslationEntry, getIDMLFilePathForName, htmlEntryToTextEntries } from "./shared_functions"
+import ncp from "ncp"
+import { encode } from 'html-entities'
 
 const validIsoCodes = [
     "aa",
@@ -340,8 +341,11 @@ function translateStoriesXML(folder: string, langCode: string, idmlName: string)
                     //IMPORTANT! After updating the fast-xml-parser library, html entities were transformed into utf8 character equivalents
                     //Now, when searching the original text so as to perform a substitution,
                     //we have to make sure we are looking for a string with html entities, not with utf8 character equivalents!
-                    modifiedXML = modifiedXML.replace(key.replace(/&/g, '&amp;'), perStoryTranslateMap[storyId][key].replace(/&/g, '&amp;'));
-                    console.log( modifiedXML );
+                    modifiedXML = modifiedXML.replace(encode( key, {mode: 'specialChars'}), encode( perStoryTranslateMap[storyId][key], {mode: 'specialChars'}) );
+                    console.log('key:',key);
+                    console.log('key encoded:', encode( key, {mode: 'specialChars'}));
+                    console.log('perStoryTranslateMap:', perStoryTranslateMap[storyId][key]);
+                    console.log('perStoryTranslateMap encoded:', encode( perStoryTranslateMap[storyId][key], {mode: 'specialChars'}) );
                 } else if (nonStoryTranslateMap[key]) {
                     console.warn("Translation used but no story id", key, nonStoryTranslateMap[key]);
                     modifiedXML.replace(key, nonStoryTranslateMap[key]);
@@ -349,6 +353,7 @@ function translateStoriesXML(folder: string, langCode: string, idmlName: string)
                     console.warn("In InDesign file", idmlName, "Missing translation for", key);
                 }
             })
+            //if( storyId === 'u714' ) process.exit();
             console.log('Writing translated story file',path.join(storiesPath, storyFile));
             fs.writeFileSync(path.join(storiesPath, storyFile), modifiedXML, { flag: "w+" });
         });
